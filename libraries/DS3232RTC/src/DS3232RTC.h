@@ -71,6 +71,7 @@ class DS3232RTC
         void squareWave(SQWAVE_FREQS_t freq);
         bool oscStopped(bool clearOSF = false);
         int temperature();
+        bool interruptWhileAsleep(bool interruptEnabled);
         static byte errCode;
 
     private:

@@ -292,6 +292,13 @@ void DS3232RTC::alarmInterrupt(byte alarmNumber, bool interruptEnabled)
     writeRTC(RTC_CONTROL, controlReg);
 }
 
+// In sleep mode, enable or disable an alarm "interrupt" which asserts the INT pin
+// on the RTC
+bool DS3232RTC::interruptWhileAsleep(bool interruptEnabled)
+{
+    return writeRTC(RTC_CONTROL, (readRTC(RTC_CONTROL) | _BV(BBSQW)));
+}
+
 // Returns true or false depending on whether the given alarm has been
 // triggered, and resets the alarm flag bit.
 bool DS3232RTC::alarm(byte alarmNumber)

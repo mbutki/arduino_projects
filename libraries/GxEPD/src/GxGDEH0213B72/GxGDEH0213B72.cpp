@@ -12,6 +12,7 @@
 // Library: https://github.com/ZinggJM/GxEPD
 
 #include "GxGDEH0213B72.h"
+#include <ArduinoLowPower.h>
 
 //#define DISABLE_DIAGNOSTIC_OUTPUT
 
@@ -423,7 +424,8 @@ void GxGDEH0213B72::_waitWhileBusy(const char* comment)
   while (1)
   {
     if (!digitalRead(_busy)) break;
-    delay(1);
+    //delay(1);
+    LowPower.sleep(30);
     if (micros() - start > 10000000)
     {
       if (_diag_enabled) Serial.println("Busy Timeout!");
@@ -435,7 +437,7 @@ void GxGDEH0213B72::_waitWhileBusy(const char* comment)
 #if !defined(DISABLE_DIAGNOSTIC_OUTPUT)
     if (_diag_enabled)
     {
-      unsigned long elapsed = micros() - start;
+      unsigned long elapsed = (micros() - start)/1000;
       Serial.print(comment);
       Serial.print(" : ");
       Serial.println(elapsed);
