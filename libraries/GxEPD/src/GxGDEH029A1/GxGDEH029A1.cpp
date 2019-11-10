@@ -11,7 +11,17 @@
 //
 // Library: https://github.com/ZinggJM/GxEPD
 
+// This is the 2.9 in display
+
 #include "GxGDEH029A1.h"
+#include <ArduinoLowPower.h>
+//#include <Adafruit_SleepyDog.h>
+
+/*#if defined (MOTEINO_M0)
+  #if defined(SERIAL_PORT_USBVIRTUAL)
+    #define Serial SERIAL_PORT_USBVIRTUAL // Required for Serial on Zero based boards
+  #endif
+#endif*/
 
 //#define DISABLE_DIAGNOSTIC_OUTPUT
 
@@ -405,19 +415,31 @@ void GxGDEH029A1::_writeCommandData(const uint8_t* pCommandData, uint8_t datalen
 
 }
 
+void dummy() {
+
+}
+
 void GxGDEH029A1::_waitWhileBusy(const char* comment)
 {
   unsigned long start = micros();
+  
   while (1)
   {
     if (!digitalRead(_busy)) break;
-    delay(1);
+    //digitalWrite(LED_BUILTIN, LOW);
+    //delay(100);
+    //LowPower.sleep(1000);
+    //Watchdog.sleep(100);
+    LowPower.attachInterruptWakeup(5, dummy, CHANGE);
+    LowPower.sleep();
+    //digitalWrite(LED_BUILTIN, HIGH);
     if (micros() - start > 10000000)
     {
       if (_diag_enabled) Serial.println("Busy Timeout!");
       break;
     }
   }
+  
   if (comment)
   {
 #if !defined(DISABLE_DIAGNOSTIC_OUTPUT)

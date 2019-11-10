@@ -25,6 +25,12 @@
 // Partial Update Delay, may have an influence on degradation
 #define GxGDEH0213B72_PU_DELAY 300
 
+#if defined (MOTEINO_M0)
+  #if defined(SERIAL_PORT_USBVIRTUAL)
+    #define Serial SERIAL_PORT_USBVIRTUAL // Required for Serial on Zero based boards
+  #endif
+#endif
+
 const uint8_t GxGDEH0213B72::LUT_DATA_full[] =
 {
   0x80, 0x60, 0x40, 0x00, 0x00, 0x00, 0x00, //LUT0: BB:     VS 0 ~7
@@ -424,8 +430,8 @@ void GxGDEH0213B72::_waitWhileBusy(const char* comment)
   while (1)
   {
     if (!digitalRead(_busy)) break;
-    //delay(1);
-    LowPower.sleep(30);
+    //delay(100);
+    LowPower.sleep(100);
     if (micros() - start > 10000000)
     {
       if (_diag_enabled) Serial.println("Busy Timeout!");

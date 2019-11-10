@@ -1,13 +1,16 @@
 #include <GxEPD.h>
-#include <GxGDEH0213B72/GxGDEH0213B72.h>
+#include <GxGDEH029A1/GxGDEH029A1.h>
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
 #include <GxIO/GxIO.h>
 
 #include <Adafruit_GFX.h>
 #include <Fonts/FreeMono12pt7b.h>
-#include <Fonts/roboto36.h>
+//#include <Fonts/robotoBold110.h>
+#include <Fonts/URW_Gothic_L_Demi_100.h>
 
 // #include <MemoryFree.h>;
+#include <ArduinoLowPower.h>
+#include <Adafruit_SleepyDog.h>
 
 #include <RTCZero.h>
 RTCZero zerortc;
@@ -31,9 +34,9 @@ bool INVERT_COLORS;
 uint16_t FOREGROUND_COLOR;
 uint16_t BACKGROUND_COLOR;
 
-uint16_t hourBox [2] = {8, 110};
-uint16_t minuteBox [2] = {8, 195};
-
+uint16_t hourBox [2] = {8, 130};
+uint16_t minuteBox [2] = {8, 225};
+uint16_t vBox [4] = {28, 280}; //250 height total
 DateTime now;
 
 
@@ -44,59 +47,77 @@ void setup(void)
 
 void loop() {
   Serial.begin(115200);
-  delay(3000);
+  //delay(3000);
 
-  Serial.println("------------------------");
-  Serial.println("");
-  Serial.println("Top of loop");
-  pinMode(6, OUTPUT);
-  digitalWrite(6, HIGH);
+  //Serial.println("------------------------");
+  //Serial.println("");
+  //Serial.println("Top of loop");
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 
-  Serial.println("Init Display");
-  display.init(115200);
-  Serial.println("Init RTCs");
-  rtc.begin();
   zerortc.begin();
 
+  // DS3231: turn on --> read --> turn off
+  pinMode(7, OUTPUT);
+  digitalWrite(7, HIGH);
+  delay(50);
+  rtc.begin();
   now = rtc.now();
+  digitalWrite(7, LOW);
+
   zerortc.setTime(now.hour(), now.minute(), now.second());
   zerortc.setDate(now.day(), now.month(), now.year());
+
+  // eInk: turn on --> update --> turn off
+  pinMode(6, OUTPUT);
+  digitalWrite(6, HIGH);
+  delay(50);
+  //Serial.println("Init Display");
+  display.init(115200);
+  //display.init();
+  //Serial.println("Init RTCs");
   
   setColors();
-  Serial.println("Start Update");
+  //Serial.println("Start Update");
   showClock();
-
-  Serial.println("Reset Alarm");
-  resetAlarm();
+  delay(10);
   digitalWrite(6, LOW);
 
-  //Serial.print("SRAM free: ");
-  //Serial.println(freeMemory(), DEC);
 
-  const int sec = 60 - rtc.now().second();
-  Serial.print("Going to Sleep for ");
-  Serial.print(sec);
-  Serial.println(" seconds");
+  int sec = 60 - zerortc.getSeconds();
+
+  //int sec = 60 - rtc.now().second();
+  //Serial.print("Going to Sleep for ");
+  //Serial.print(sec);
+  //Serial.println(" seconds");
+
+  if (sec < 1) {
+    sec = 1;
+  }
+
+  // update cycle should have 5 flashes overall
+  digitalWrite(LED_BUILTIN, LOW);
   //zerortc.standbyMode();
-  delay(sec * 1000);
-  Serial.println("Woke up");
+
+  LowPower.sleep(sec*1000);
+
+  //Serial.println("Woke up");
 }
 
-void resetAlarm(void) {
+/*void resetAlarm(void) {
   zerortc.setAlarmTime(0, 0, 0);
   zerortc.enableAlarm(zerortc.MATCH_SS);
   //zerortc.attachInterrupt(match);
-}
+}*/
 
 void showVoltage(void) {
-  uint16_t vBox [4] = {25, 240}; //250 height total
   display.setFont(&FreeMono12pt7b);
   display.setCursor(vBox[0], vBox[1]);
 
   String voltStr = String(getBatteryVoltage()) + "v";
-  Serial.println("About to draw voltage");
+  //Serial.println("About to draw voltage");
   display.print(voltStr);
-  Serial.println("Drew voltage");
+  //Serial.println("Drew voltage");
 }
 
 float getBatteryVoltage() {
@@ -110,7 +131,8 @@ float getBatteryVoltage() {
 // 250 px x 122 px
 void showClock()
 {
-  display.setFont(&Roboto_Bold_90);
+  //display.setFont(&Roboto_Bold_100);
+  display.setFont(&URW_Gothic_L_Demi_100);
   display.fillScreen(BACKGROUND_COLOR);
   display.setTextColor(FOREGROUND_COLOR);
   display.setRotation(0);
@@ -120,7 +142,7 @@ void showClock()
   showVoltage();
 
   display.update();
-  Serial.println("Full Refresh");
+  //Serial.println("Full Refresh");
   //display.powerDown();
 }
 
@@ -130,18 +152,18 @@ void showHour() {
   String hourStr = (hours < 10 ? "0" : "") + String(hours);
 
   display.setCursor(hourBox[0], hourBox[1]);
-  Serial.println("About to draw hour");
+  //Serial.println("About to draw hour");
   display.print(hourStr);
-  Serial.println("Drew hour");
+  //Serial.println("Drew hour");
 }
 
 void showMinute() {
   String minuteStr = getMinStr(now.minute());
 
   display.setCursor(minuteBox[0], minuteBox[1]);
-  Serial.println("About to draw minute");
+  //Serial.println("About to draw minute");
   display.print(minuteStr);
-  Serial.println("Drew minute");
+  //Serial.println("Drew minute");
 }
 
 String getMinStr(uint16_t minutes) {
